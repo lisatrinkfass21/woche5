@@ -19,11 +19,11 @@ public class Main {
 
         System.out.println(">--- ORIGINAL ---");
         // print the sudoku if you want
-        int[][] output = ss.solveSudoku(input);
+        //      int[][] output = ss.solveSudoku(input);
         System.out.println(">--- SOLUTION ---");
         // print the sudoku if you want
         System.out.println(">----------------");
-        System.out.println("SOLVED    = " + ss.checkSudoku(output));
+        System.out.println("SOLVED    = " + ss.checkSudoku(input));
         System.out.println(">----------------");
     }
 }

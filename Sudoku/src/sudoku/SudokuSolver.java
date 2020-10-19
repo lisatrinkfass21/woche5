@@ -26,28 +26,25 @@ import java.util.logging.Logger;
  */
 public class SudokuSolver implements ISodukoSolver {
 
-    private int[][] felder = new int[9][9];
-
     public SudokuSolver() {
         //initialize if necessary
     }
 
     @Override
     public final int[][] readSudoku(File file) {
+        int[][] felder = new int[9][9];
         String line;
-        int[] reihe = new int[9];
         int a = 0;
+
         try {
-            BufferedReader bf = new BufferedReader(new FileReader(new File("1_sudoku_level1")));
+            BufferedReader bf = new BufferedReader(new FileReader(file));
             while ((line = bf.readLine()) != null) {
                 String[] lines = line.split(";");
-                for (int i = 0; i < felder.length; i++) {
-                    reihe = Arrays.stream(lines)
-                            .mapToInt(s -> Integer.parseInt(s))
-                            .toArray();
-                }
-                felder[a] = reihe;
+                felder[a] = Arrays.stream(lines)
+                        .mapToInt(s -> Integer.parseInt(s))
+                        .toArray();
                 a++;
+
             }
         } catch (FileNotFoundException ex) {
             Logger.getLogger(SudokuSolver.class.getName()).log(Level.SEVERE, null, ex);
@@ -55,18 +52,67 @@ public class SudokuSolver implements ISodukoSolver {
             Logger.getLogger(SudokuSolver.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+        return felder;
+
     }
 
     @Override
     public boolean checkSudoku(int[][] rawSudoku) {
-        // implement this method
-        return false; // delete this line!
+        int[] reihe = new int[9];
+        /* for (int i = 0; i < rawSudoku[0].length; i++) {   // checkt reihe
+            reihe = rawSudoku[i];
+           if (!check9Felder(reihe)) {
+                return false;
+            }
+        }
+
+        for (int j = 0; j < rawSudoku[1].length; j++) { // checkt spalte
+            for (int a = 0; a < rawSudoku.length; a++) {
+                reihe[a] = rawSudoku[j][a];
+            }
+            if (!check9Felder(reihe)) {
+                return false;
+            }
+        }*/
+        int row = 0;
+        int spalte = 0;
+        int aktuelleStelle = 0;
+        for (int x = 0; x < 9; x++) {
+            for (int e = 0; e < 3; e++) {
+                for (int i = 0; i < 3; i++) {
+                    reihe[aktuelleStelle] = rawSudoku[row][spalte];
+                    spalte++;
+                    aktuelleStelle++;
+                }
+                row++;
+            }
+            if (!check9Felder(reihe)) {
+                return false;
+            }
+            aktuelleStelle = 0;
+            if (row == 9) {
+                row = 0;
+            } else {
+                spalte = 0;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean check9Felder(int[] rowColumn) {
+        int sum = Arrays.stream(rowColumn)
+                .reduce(0, (a, b) -> a + b);
+        if (sum == 45) {
+            return true;
+        }
+        return false;
     }
 
     @Override
     public int[][] solveSudoku(int[][] rawSudoku) {
-        // implement this method
-        return new int[0][0]; // delete this line!
+
+        return new int[0][0];
     }
 
     @Override
