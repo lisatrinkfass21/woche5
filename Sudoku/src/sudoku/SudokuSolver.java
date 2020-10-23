@@ -14,7 +14,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,9 +58,9 @@ public class SudokuSolver implements ISodukoSolver {
     @Override
     public boolean checkSudoku(int[][] rawSudoku) {
         int[] reihe = new int[9];
-        /* for (int i = 0; i < rawSudoku[0].length; i++) {   // checkt reihe
+        for (int i = 0; i < rawSudoku[0].length; i++) {   // checkt reihe
             reihe = rawSudoku[i];
-           if (!check9Felder(reihe)) {
+            if (!check9Felder(reihe)) {
                 return false;
             }
         }
@@ -73,7 +72,7 @@ public class SudokuSolver implements ISodukoSolver {
             if (!check9Felder(reihe)) {
                 return false;
             }
-        }*/
+        }
         int row = 0;
         int spalte = 0;
         int aktuelleStelle = 0;
@@ -85,16 +84,17 @@ public class SudokuSolver implements ISodukoSolver {
                     aktuelleStelle++;
                 }
                 row++;
+                spalte = spalte - 3;
             }
             if (!check9Felder(reihe)) {
                 return false;
             }
             aktuelleStelle = 0;
-            if (row == 9) {
+            if (row >= 8) {
                 row = 0;
-            } else {
-                spalte = 0;
+                spalte += 3;
             }
+
         }
 
         return true;
@@ -117,9 +117,55 @@ public class SudokuSolver implements ISodukoSolver {
 
     @Override
     public int[][] solveSudokuParallel(int[][] rawSudoku) {
-        // implement this method
+        int[][][] arrOptions = new int[9][9][9];
+        int[][] solution = new int[9][9];
+        int[] block = new int[9];
+        for (int i = 0; i < rawSudoku.length; i++) {
+            for (int j = 0; j < rawSudoku.length; j++) {
+                if (rawSudoku[i][j] == 0) {
+                    solution[i][j] = rawSudoku[i][j];
+                } else {
+                    for (int k = 0; k < rawSudoku.length; k++) {
+                        arrOptions[i][j][k] = k;
+                    }
+                }
+            }
+        }
+
+        for (int i = 0; i < solution.length; i++) {
+            for (int j = 0; j < solution.length; j++) {
+                if (solution[i][j] != 0) {
+                    block = solution[i];
+
+                }
+
+            }
+
+        }
+
         return new int[0][0]; // delete this line!
     }
 
-    // add helper methods here if necessary
+    private int[] checkOptions(int[] options, int[] block) {
+        for (int i = 0; i < options.length; i++) {
+            for (int j = 0; j < block.length; j++) {
+                if (block[j] == options[i]) {
+                    break;
+
+                }
+
+            }
+
+        }
+        return options;
+    }
+
+    public long benchmark(int[][] rawSudoku) {
+        long before = System.currentTimeMillis();
+        for (int i = 0; i < 10; i++) {
+
+        }
+        long after = System.currentTimeMillis();
+        return before - after / 10;
+    }
 }
