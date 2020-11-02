@@ -13,29 +13,30 @@ import java.io.File;
 
 public class Main {
 
-    private static final int[][] STUDENT_SUDOKU_WITH_ONLY_ONE_SOLUTION_SOLVED = new int[][]{
-        {1, 7, 5, 9, 8, 2, 3, 6, 4},
-        {9, 4, 6, 3, 7, 1, 5, 2, 8},
-        {3, 8, 2, 4, 5, 6, 7, 1, 9},
-        {8, 2, 7, 5, 3, 9, 1, 4, 6},
-        {5, 9, 4, 6, 1, 8, 2, 3, 7},
-        {6, 1, 3, 7, 2, 4, 8, 9, 5},
-        {4, 3, 1, 8, 9, 7, 6, 5, 2},
-        {2, 6, 8, 1, 4, 5, 9, 7, 3},
-        {7, 5, 9, 2, 6, 3, 4, 8, 1}
-    };
-
     public static void main(String[] args) {
         SudokuSolver ss = new SudokuSolver();
-        int[][] input = ss.readSudoku(new File("1_sudoku_level1.csv"));
+        int[][] input = ss.readSudoku(new File("2_sudoku_level1.csv"));
 
         System.out.println(">--- ORIGINAL ---");
         //print the sudoku if you want
+        ausgabe(input);
         int[][] output = ss.solveSudoku(input);
         System.out.println(">--- SOLUTION ---");
         // print the sudoku if you want
+        ausgabe(output);
         System.out.println(">----------------");
         System.out.println("SOLVED    = " + ss.checkSudoku(output));
         System.out.println(">----------------");
+    }
+
+    private static void ausgabe(int[][] arr) {
+        for (int i = 0; i < arr.length; i++) {
+            for (int j = 0; j < arr.length; j++) {
+                System.out.print(arr[i][j] + "  ");
+
+            }
+            System.out.println(" ");
+
+        }
     }
 }

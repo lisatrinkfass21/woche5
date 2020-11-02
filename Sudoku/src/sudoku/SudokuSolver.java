@@ -165,14 +165,14 @@ public class SudokuSolver implements ISodukoSolver {
                         }
 
                         for (int k = 0; k < this.solution.length; k++) {
-                            if (arrOptions[i][j][k] != 0) { //Überprüfung ob die Option nicht schon gelöscht wurde
-                                if (existenz(block, arrOptions[i][j][k])) {//Überprüfung ob Option hier möglich ist
-                                    arrOptions[i][j][k] = 0;
+                            if (arrOptions[j][i][k] != 0) { //Überprüfung ob die Option nicht schon gelöscht wurde
+                                if (existenz(block, arrOptions[j][i][k])) {//Überprüfung ob Option hier möglich ist
+                                    arrOptions[j][i][k] = 0;
                                 }
                             }
 
                         }
-                        only1Option(arrOptions, i, j); // überprüfung ob nur mehr eine Option über bleibt und Speicherung in Solutions
+                        only1Option(arrOptions, j, i); // überprüfung ob nur mehr eine Option über bleibt und Speicherung in Solutions
                     }
                 }
 
