@@ -235,10 +235,13 @@ public class SudokuSolver implements ISodukoSolver {
         return new int[0][0];
     }
 
-    public long benchmark(int[][] rawSudoku) {
+    public long benchmark(int[][] rawSudoku) { //keine Ahnung wofür der Parameter notwendig war,wenn wir auch readSudoku messen müssen müssen?
+        File file = new File("1_sudoku_level1.csv");
         long before = System.currentTimeMillis();
         for (int i = 0; i < 10; i++) {
-
+            int[][] unsolved = readSudoku(file);
+            int[][] solved = solveSudoku(unsolved);
+            checkSudoku(solved);
         }
         long after = System.currentTimeMillis();
         return before - after / 10;
@@ -266,7 +269,7 @@ public class SudokuSolver implements ISodukoSolver {
         }
         if (count == 1) {
             this.solution[stellei][stellej] = options[stellei][stellej][stelle];
-            System.out.println("Wert wurde gespreichert");
+
         }
 
     }
