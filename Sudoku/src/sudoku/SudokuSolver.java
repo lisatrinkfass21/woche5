@@ -14,9 +14,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /* Please enter here an answer to task four between the tags:
  * <answerTask4>
@@ -151,121 +154,198 @@ public class SudokuSolver implements ISodukoSolver {
 
     @Override
     public int[][] solveSudoku(int[][] rawSudoku) {
-        int[][][] arrOptions = new int[9][9][9];
-        int[] block = new int[9];
+        int[][][] options = new int[9][9][9];
+        int row = 0;
+        int column = 0;
 
         for (int i = 0; i < rawSudoku.length; i++) {
-            for (int j = 0; j < rawSudoku.length; j++) {
+            for (int j = 0; j < rawSudoku[i].length; j++) {
                 if (rawSudoku[i][j] != 0) {
-                    solution[i][j] = rawSudoku[i][j];
+                    options[i][j] = new int[]{rawSudoku[i][j]};
                 } else {
-                    for (int k = 0; k < rawSudoku.length; k++) {
-                        arrOptions[i][j][k] = k + 1;   //befüllen von arrOption mit allen Ziffern (1-9)
-                    }
+                    options[i][j] = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9};//befüllen von allen möglichen Optionen
                 }
             }
         }
 
-        while (checkSudoku(solution) != true) {
-            //Überprüfung der Reihen
-            for (int i = 0; i < solution.length; i++) {
-                for (int j = 0; j < solution.length; j++) {
-                    if (solution[i][j] == 0) {  //überprüfung ob Stelle schon fixe Zahl hat
-                        block = solution[i];
-
-                        for (int k = 0; k < solution.length; k++) {
-                            if (arrOptions[i][j][k] != 0) { //Überprüfung ob die Option nicht schon gelöscht wurde
-                                if (existenz(block, arrOptions[i][j][k])) {//Überprüfung ob Option hier möglich ist
-                                    arrOptions[i][j][k] = 0;
-                                }
-                            }
-
+        boolean change = false;
+        while (!change) {
+            for (int i = 0; i < options.length; i++) { //löscht alle Optionen von einer Reihe
+                int[][] numbers = Arrays.stream(options[i]).filter(arr -> arr.length == 1).toArray(int[][]::new);//speichert alle fixen Werte einer Reihe in numbers
+                for (int j = 0; j < numbers.length; j++) {
+                    int index = numbers[j][0] - 1; //stelle des fixen Wertes in optionsarray
+                    Arrays.stream(options[i]).forEach(arr -> {
+                        if (arr.length == 9) {
+                            arr[index] = 0;
                         }
-                        only1Option(arrOptions, i, j); // überprüfung ob nur mehr eine Option über bleibt und Speicherung in Solutions
-
-                    }
-
+                    });
                 }
-
             }
 
-            block = new int[9];
-
-            //Überprüfung der Spalten
-            for (int i = 0; i < 9; i++) {
-                for (int j = 0; j < 9; j++) {
-                    if (solution[j][i] == 0) {
-                        for (int k = 0; k < 9; k++) {
-                            block[k] = solution[k][i];
-
-                        }
-
-                        for (int k = 0; k < solution.length; k++) {
-                            if (arrOptions[j][i][k] != 0) { //Überprüfung ob die Option nicht schon gelöscht wurde
-                                if (existenz(block, arrOptions[j][i][k])) {//Überprüfung ob Option hier möglich ist
-                                    arrOptions[j][i][k] = 0;
-                                }
-                            }
-
-                        }
-                        only1Option(arrOptions, j, i); // überprüfung ob nur mehr eine Option über bleibt und Speicherung in Solutions
-                    }
+            for (int i = 0; i < options.length; i++) {//löscht alle Optionen von einer Spalte
+                int[][] columnArr = new int[9][];
+                for (int j = 0; j < options.length; j++) {
+                    columnArr[j] = options[j][i];//speichert alle möglichen Optionen spaltenweise ab bzw 1 zahl bei schon fixen Werten
                 }
-
+                int[][] numbers = Arrays.stream(columnArr).filter(arr -> arr.length == 1).toArray(int[][]::new); //speichert alle fixen Werte
+                for (int j = 0; j < numbers.length; j++) {
+                    int index = numbers[j][0] - 1; //speichert Stelle wo sich fixer Wert befindet
+                    Arrays.stream(columnArr).forEach(arr -> {
+                        if (arr.length == 9) {
+                            arr[index] = 0;
+                        }
+                    });
+                }
+                for (int j = 0; j < columnArr.length; j++) {
+                    options[j][i] = columnArr[j]; //speichert alle optionen in options
+                }
             }
 
-            //Überprüfung der 9erBlöcke
-            block = new int[9];
-            int row = 0;
-            int spalte = 0;
-            int aktuelleStelle = 0;
-            for (int y = 0; y < solution.length; y++) {
-                for (int x = 0; x < solution.length; x++) {
-                    if (solution[y][x] == 0) { // überprüft ob Stelle schon fixen Wert hat
-
-                        if (y < 3) { //-> zuweisen der 9erBlock Bereiche
-                            row = 0;
-                        } else if (y < 6) {
-                            row = 3;
-                        } else {
-                            row = 6;
-                        }
-                        if (x < 3) {
-                            spalte = 0;
-                        } else if (x < 6) {
-                            spalte = 3;
-                        } else {
-                            spalte = 6;
-                        }
-                        aktuelleStelle = 0;
-
-                        for (int e = 0; e < 3; e++) {
-                            for (int i = 0; i < 3; i++) {
-                                block[aktuelleStelle] = solution[row][spalte];
-                                spalte++;
-                                aktuelleStelle++;
-                            }
-                            row++;
-                            spalte = spalte - 3;
-                        }
-                        for (int i = 0; i < solution.length; i++) {
-                            if (arrOptions[y][x][i] != 0) { //Überprüfung ob die Option nicht schon gelöscht wurde
-                                if (existenz(block, arrOptions[y][x][i])) {//Überprüfung ob Option hier möglich ist
-                                    arrOptions[y][x][i] = 0;
+            while (row != 9) { //9erBlock iteration -> löscht alle Optionen von einem 9erBlock
+                for (int i = row; i < row + 3; i++) {
+                    for (int j = column; j < column + 3; j++) {
+                        if (options[i][j].length == 1) {//wenn stelle fixen Wert hat
+                            for (int k = row; k < row + 3; k++) {
+                                for (int l = column; l < column + 3; l++) {
+                                    if (options[k][l].length != 1) {
+                                        options[k][l][options[i][j][0] - 1] = 0;//löscht die option wenn es in diesem block schon vorhanden ist
+                                    }
                                 }
                             }
-
                         }
-                        only1Option(arrOptions, y, x);
+                    }
+                }
+                column += 3; //springt um 3 spalten weiter
+                if (column == 9) {// wenn am ende der Tabelle
+                    column = 0;//wird auf spalte 1 zurück gesetzt
+                    row += 3;//und reihen werden um 3 verändert
+                }
+            } // bis jetzt wurden alle möglichen Optionen aus dem optionen array gelöscht
+            change = true;
+            while (change) { //reihenweise überprüfung
+                change = false;
+
+                for (int i = 0; i < options.length; i++) {
+                    int[][] currentArr = options[i]; //speichert reihenweise die Optionen
+                    for (int j = 0; j < currentArr.length; j++) {
+                        if (currentArr[j].length == 9) {
+                            List<Integer> numbers = new ArrayList<>();
+                            for (int k = 0; k < currentArr[j].length; k++) {
+                                if (currentArr[j][k] != 0) { //wenn möglichkeit noch nicht gelöscht wurde
+                                    numbers.add(currentArr[j][k]);//möglichkeiten werden in arraylist gespeichert
+                                }
+                            }
+                            for (int a = 0; a < numbers.size(); a++) {
+                                int counter = 0;
+                                for (int k = 0; k < currentArr.length; k++) {
+                                    List<Integer> temp = Arrays.stream(currentArr[k]).boxed().collect(Collectors.toList()); //boxed speichert alle arrayelemente in integers
+                                    if (temp.contains(numbers.get(a))) {//schaut ob number(a) in temp vorkommt
+                                        counter++;
+                                    }
+                                }
+                                if (counter == 1) {//wen nur eine zahl in temp vorkommt kann diese fixiert werden
+                                    options[i][j] = new int[]{numbers.get(a)}; //in options wird nur mehr 1 Wert gespeichert
+                                    change = true;
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
 
+                for (int i = 0; i < options.length; i++) {//spaltenweiseüberprüfung
+                    int[][] currentArr = new int[options[i].length][];
+                    for (int x = 0; x < options[i].length; x++) {
+                        currentArr[x] = options[x][i]; //speichert alle offene optionen (spaltenweises durchiterieren -> bsp alle optionen von reihe 0 und spalte 0 / alle optionen von reihe 1 und spalte 0)
+                    }
+                    for (int j = 0; j < currentArr.length; j++) {
+                        if (currentArr[j].length == 9) {
+                            List<Integer> numbers = new ArrayList<>(); // alle optionen werden in list gespeichert
+                            for (int k = 0; k < currentArr[j].length; k++) {
+                                if (currentArr[j][k] != 0) {
+                                    numbers.add(currentArr[j][k]);//mögliche Optionen werden in arrayList gespeichert
+                                }
+                            }
+                            for (int a = 0; a < numbers.size(); a++) {
+                                int counter = 0;
+                                for (int k = 0; k < currentArr.length; k++) {
+                                    List<Integer> temp = Arrays.stream(currentArr[k]).boxed().collect(Collectors.toList()); //selbe wie oben -> erklärung siehe oben
+                                    if (temp.contains(numbers.get(a))) {
+                                        counter++;
+                                    }
+                                }
+                                if (counter == 1) {//Erklärung siehe oben
+                                    options[j][i] = new int[]{numbers.get(a)};
+                                    change = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                row = 0; //9erblockweises durchiterieren -> erklärung siehe oben genau
+                column = 0;
+                while (row != 9) {
+                    int tempCounter = 0;
+                    int[][] currentArr = new int[options.length][];
+                    for (int i = row; i < row + 3; i++) {                       //durchiterieren von 9erBlöcken
+                        for (int j = column; j < column + 3; j++) {
+                            currentArr[tempCounter] = options[i][j];
+                            tempCounter++;
+                        }
+                    }
+
+                    //weitere Zeilen sind genau gleich wie oben -> siehe Erklärung
+                    for (int j = 0; j < currentArr.length; j++) {
+                        if (currentArr[j].length == 9) {
+                            List<Integer> numbers = new ArrayList<>();
+                            for (int k = 0; k < currentArr[j].length; k++) {
+                                if (currentArr[j][k] != 0) {
+                                    numbers.add(currentArr[j][k]);
+                                }
+                            }
+                            for (int a = 0; a < numbers.size(); a++) {
+                                int counter = 0;
+                                for (int k = 0; k < currentArr.length; k++) {
+                                    List<Integer> temp = Arrays.stream(currentArr[k]).boxed().collect(Collectors.toList());
+                                    if (temp.contains(numbers.get(a))) {
+                                        counter++;
+                                    }
+                                }
+                                if (counter == 1) {
+                                    int rawIndex = (j / 3) + row; //richtige Reihe finden
+                                    int columnIndex = (j % 3) + column;//richtige Spalte finden
+                                    options[rawIndex][columnIndex] = new int[]{numbers.get(a)}; //löschen von anderen optionen
+                                    change = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    column += 3; //spalte wird erhöht
+                    if (column == 9) {//wenn ende der Tabelle angelangt wurde
+                        column = 0;
+                        row += 3;
+                    }
+                }
+            }
+            change = true;
+            for (int i = 0; i < options.length; i++) {//Überprüfung ob sudoku schon fertig ist
+                for (int j = 0; j < options[i].length; j++) {
+                    if (options[i][j].length == 9) {//schaut ob noch irgendwo mehr als eine Option ist
+                        change = false;
+                        break;
+                    }
+                }
+                if (!change) {
+                    break;
+                }
             }
         }
-        block = new int[9];
-        arrOptions = new int[9][9][9];
 
-        return solution;
+        int[][] ergebnis = Arrays.stream(options).map(arr -> Arrays.stream(arr).mapToInt(i -> i[0]).toArray()).toArray(int[][]::new); //wandelt 3D array in 2D array
+        return ergebnis;
     }
 
     @Override

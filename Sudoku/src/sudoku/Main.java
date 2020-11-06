@@ -15,7 +15,7 @@ public class Main {
 
     public static void main(String[] args) {
         SudokuSolver ss = new SudokuSolver();
-        int[][] input = ss.readSudoku(new File("1_sudoku_level1.csv"));
+        int[][] input = ss.readSudoku(new File("3_sudoku_level2.csv"));
         System.out.println(">--- ORIGINAL ---");
         //print the sudoku if you want
         ausgabe(input);
