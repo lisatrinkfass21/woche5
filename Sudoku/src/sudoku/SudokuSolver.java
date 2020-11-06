@@ -25,10 +25,9 @@ import java.util.logging.Logger;
  */
 public class SudokuSolver implements ISodukoSolver {
 
-    private int[][] solution;
+    int[][] solution = new int[9][9];
 
     public SudokuSolver() {
-        this.solution = new int[9][9];
 
     }
 
@@ -60,53 +59,88 @@ public class SudokuSolver implements ISodukoSolver {
 
     @Override
     public boolean checkSudoku(int[][] rawSudoku) {
-        int[] reihe = new int[9];
-        for (int i = 0; i < rawSudoku[0].length; i++) {   // checkt reihe
+
+        /*for (int i = 0; i < rawSudoku[0].length; i++) {   // checkt reihe
             reihe = rawSudoku[i];
             if (!check9Felder(reihe)) {
                 return false;
             }
+        }*/
+        for (int i = 0; i < rawSudoku.length; i++) { //checkt reihe mit streams
+            if (Arrays.stream(rawSudoku[i])
+                    .distinct(). //löscht alle doppelten Elemente in Liste (alle 0) oder doppelt vorkommende Zahlen
+                    toArray().length != 9) {
+                return false;
+            }
         }
 
-        reihe = new int[9];
-        for (int zeile = 0; zeile < rawSudoku.length; zeile++) { // checkt spalte
+        int[] reihe = new int[9];
+        /*for (int zeile = 0; zeile < rawSudoku.length; zeile++) { // checkt spalte
             for (int spalte = 0; spalte < rawSudoku.length; spalte++) {
                 reihe[spalte] = rawSudoku[zeile][spalte];
             }
             if (!check9Felder(reihe)) {
                 return false;
             }
+        }*/
+        for (int zeile = 0; zeile < rawSudoku.length; zeile++) { // checkt spalte mit streams
+            for (int spalte = 0; spalte < rawSudoku.length; spalte++) {
+                reihe[spalte] = rawSudoku[zeile][spalte];
+            }
+            if (Arrays.stream(reihe)
+                    .distinct().
+                    toArray().length != 9) {
+                return false;
+            }
         }
 
         reihe = new int[9];
-        int row = 0;  //cehck 9erblock
+        int row = 0;
         int spalte = 0;
-        int aktuelleStelle = 0;
-        for (int x = 0; x < 9; x++) {
-            for (int e = 0; e < 3; e++) {
-                for (int i = 0; i < 3; i++) {
-                    reihe[aktuelleStelle] = rawSudoku[row][spalte];
-                    spalte++;
-                    aktuelleStelle++;
+
+        /*while(row !=9){ //check 9erBlock
+                int counter = 0;
+                int[] arr = new int[9];
+                for(int i = row; i < row+3; i++){
+                    for (int j = spalte; j < spalte+3; j++) {
+                        arr[counter] = rawSudoku[i][j];
+                        counter++;
+                    }
                 }
-                row++;
-                spalte = spalte - 3;
+                if (!check9Felder(reihe)) {
+                    return false;
+                }
+                spalte += 3;
+                if (spalte == 9) {
+                    spalte = 0;
+                    row += 3;
+                }
+
+            }*/
+        while (row != 9) { // check 9erBlock mit streams
+            int counter = 0;
+            int[] arr = new int[9];
+            for (int i = row; i < row + 3; i++) {
+                for (int j = spalte; j < spalte + 3; j++) {
+                    arr[counter] = rawSudoku[i][j];
+                    counter++;
+                }
             }
-            if (!check9Felder(reihe)) {
+            if (Arrays.stream(arr).distinct().toArray().length != 9) {
                 return false;
             }
-            aktuelleStelle = 0;
-            if (row >= 8) {
-                row = 0;
-                spalte += 3;
+            spalte += 3;
+            if (spalte == 9) {
+                spalte = 0;
+                row += 3;
             }
-
         }
 
+        reihe = new int[9];
         return true;
     }
 
-    private boolean check9Felder(int[] rowColumn) {
+    private boolean check9Felder(int[] rowColumn) { //wird nur ohne Threads benötigt
         int sum = Arrays.stream(rowColumn)
                 .reduce(0, (a, b) -> a + b);
         if (sum == 45) {
@@ -123,7 +157,7 @@ public class SudokuSolver implements ISodukoSolver {
         for (int i = 0; i < rawSudoku.length; i++) {
             for (int j = 0; j < rawSudoku.length; j++) {
                 if (rawSudoku[i][j] != 0) {
-                    this.solution[i][j] = rawSudoku[i][j];
+                    solution[i][j] = rawSudoku[i][j];
                 } else {
                     for (int k = 0; k < rawSudoku.length; k++) {
                         arrOptions[i][j][k] = k + 1;   //befüllen von arrOption mit allen Ziffern (1-9)
@@ -134,12 +168,12 @@ public class SudokuSolver implements ISodukoSolver {
 
         while (checkSudoku(solution) != true) {
             //Überprüfung der Reihen
-            for (int i = 0; i < this.solution.length; i++) {
-                for (int j = 0; j < this.solution.length; j++) {
-                    if (this.solution[i][j] == 0) {  //überprüfung ob Stelle schon fixe Zahl hat
-                        block = this.solution[i];
+            for (int i = 0; i < solution.length; i++) {
+                for (int j = 0; j < solution.length; j++) {
+                    if (solution[i][j] == 0) {  //überprüfung ob Stelle schon fixe Zahl hat
+                        block = solution[i];
 
-                        for (int k = 0; k < this.solution.length; k++) {
+                        for (int k = 0; k < solution.length; k++) {
                             if (arrOptions[i][j][k] != 0) { //Überprüfung ob die Option nicht schon gelöscht wurde
                                 if (existenz(block, arrOptions[i][j][k])) {//Überprüfung ob Option hier möglich ist
                                     arrOptions[i][j][k] = 0;
@@ -148,7 +182,9 @@ public class SudokuSolver implements ISodukoSolver {
 
                         }
                         only1Option(arrOptions, i, j); // überprüfung ob nur mehr eine Option über bleibt und Speicherung in Solutions
+
                     }
+
                 }
 
             }
@@ -158,13 +194,13 @@ public class SudokuSolver implements ISodukoSolver {
             //Überprüfung der Spalten
             for (int i = 0; i < 9; i++) {
                 for (int j = 0; j < 9; j++) {
-                    if (this.solution[j][i] == 0) {
+                    if (solution[j][i] == 0) {
                         for (int k = 0; k < 9; k++) {
-                            block[k] = this.solution[k][i];
+                            block[k] = solution[k][i];
 
                         }
 
-                        for (int k = 0; k < this.solution.length; k++) {
+                        for (int k = 0; k < solution.length; k++) {
                             if (arrOptions[j][i][k] != 0) { //Überprüfung ob die Option nicht schon gelöscht wurde
                                 if (existenz(block, arrOptions[j][i][k])) {//Überprüfung ob Option hier möglich ist
                                     arrOptions[j][i][k] = 0;
@@ -226,6 +262,9 @@ public class SudokuSolver implements ISodukoSolver {
 
             }
         }
+        block = new int[9];
+        arrOptions = new int[9][9][9];
+
         return solution;
     }
 
@@ -236,15 +275,21 @@ public class SudokuSolver implements ISodukoSolver {
     }
 
     public long benchmark(int[][] rawSudoku) { //keine Ahnung wofür der Parameter notwendig war,wenn wir auch readSudoku messen müssen müssen?
-        File file = new File("1_sudoku_level1.csv");
+        File file = new File("2_sudoku_level1.csv");
         long before = System.currentTimeMillis();
+        int[][] unsolved = new int[9][9];
+        int[][] solved = new int[9][9];
         for (int i = 0; i < 10; i++) {
-            int[][] unsolved = readSudoku(file);
-            int[][] solved = solveSudoku(unsolved);
+            solution = new int[9][9];
+            unsolved = readSudoku(file);
+            solved = solveSudoku(unsolved);
             checkSudoku(solved);
+            unsolved = new int[9][9];
+            solved = new int[9][9];
+
         }
         long after = System.currentTimeMillis();
-        return before - after / 10;
+        return (after - before) / 10;
     }
 
     private boolean existenz(int[] block, int option) {
@@ -257,10 +302,11 @@ public class SudokuSolver implements ISodukoSolver {
         return false;
     }
 
-    private void only1Option(int[][][] options, int stellei, int stellej) {
+    private int only1Option(int[][][] options, int stellei, int stellej) {
         int count = 0; //zählt die Anzahl der Zahlen über 0
         int stelle = 0;
         for (int k = 0; k < options.length; k++) {
+
             if (options[stellei][stellej][k] != 0) {
                 count++;
                 stelle = k;
@@ -268,9 +314,9 @@ public class SudokuSolver implements ISodukoSolver {
 
         }
         if (count == 1) {
-            this.solution[stellei][stellej] = options[stellei][stellej][stelle];
-
+            solution[stellei][stellej] = options[stellei][stellej][stelle];
         }
+        return count;
 
     }
 }

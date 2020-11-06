@@ -15,8 +15,7 @@ public class Main {
 
     public static void main(String[] args) {
         SudokuSolver ss = new SudokuSolver();
-        int[][] input = ss.readSudoku(new File("2_sudoku_level1.csv"));
-
+        int[][] input = ss.readSudoku(new File("1_sudoku_level1.csv"));
         System.out.println(">--- ORIGINAL ---");
         //print the sudoku if you want
         ausgabe(input);
@@ -27,6 +26,8 @@ public class Main {
         System.out.println(">----------------");
         System.out.println("SOLVED    = " + ss.checkSudoku(output));
         System.out.println(">----------------");
+
+        System.out.println("Benchmark (Laufzeit): " + ss.benchmark(new int[9][9]) + " msec.");
     }
 
     private static void ausgabe(int[][] arr) {
