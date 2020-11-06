@@ -10,10 +10,11 @@ package sudoku;
  * @author Lisa
  */
 import java.io.File;
+import java.util.concurrent.ExecutionException;
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
         SudokuSolver ss = new SudokuSolver();
         int[][] input = ss.readSudoku(new File("3_sudoku_level2.csv"));
         System.out.println(">--- ORIGINAL ---");
@@ -24,7 +25,7 @@ public class Main {
         // print the sudoku if you want
         ausgabe(output);
         System.out.println(">----------------");
-        System.out.println("SOLVED    = " + ss.checkSudoku(output));
+        System.out.println("SOLVED    = " + ss.checkSudokuParallel(output));
         System.out.println(">----------------");
 
         System.out.println("Benchmark (Laufzeit): " + ss.benchmark(new int[9][9]) + " msec.");

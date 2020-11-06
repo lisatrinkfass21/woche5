@@ -17,6 +17,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -150,6 +155,74 @@ public class SudokuSolver implements ISodukoSolver {
             return true;
         }
         return false;
+    }
+
+    public boolean checkSudokuParallel(int[][] rawSudoku) throws InterruptedException, ExecutionException {
+        List<Callable<Boolean>> calls = new ArrayList<>();
+
+        Callable<Boolean> calRow = () -> {
+            for (int i = 0; i < rawSudoku.length; i++) { //checkt reihe mit streams
+                if (Arrays.stream(rawSudoku[i])
+                        .distinct(). //löscht alle doppelten Elemente in Liste (alle 0) oder doppelt vorkommende Zahlen
+                        toArray().length != 9) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        Callable<Boolean> calColumn = () -> {
+            int[] reihe = new int[9];
+            for (int zeile = 0; zeile < rawSudoku.length; zeile++) { // checkt spalte mit streams
+                for (int spalte = 0; spalte < rawSudoku.length; spalte++) {
+                    reihe[spalte] = rawSudoku[zeile][spalte];
+                }
+                if (Arrays.stream(reihe)
+                        .distinct().
+                        toArray().length != 9) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        Callable<Boolean> calBloc = () -> {
+            int[] reihe = new int[9];
+            int row = 0;
+            int spalte = 0;
+            while (row != 9) {
+                int counter = 0;
+                int[] arr = new int[9];
+                for (int i = row; i < row + 3; i++) {
+                    for (int j = spalte; j < spalte + 3; j++) {
+                        arr[counter] = rawSudoku[i][j];
+                        counter++;
+                    }
+                }
+                if (Arrays.stream(arr).distinct().toArray().length != 9) {
+                    return false;
+                }
+                spalte += 3;
+                if (spalte == 9) {
+                    spalte = 0;
+                    row += 3;
+                }
+            }
+            return true;
+        };
+
+        calls.add(calRow);
+        calls.add(calBloc);
+        calls.add(calColumn);
+
+        ExecutorService ex = Executors.newFixedThreadPool(3);
+        boolean sol = true;
+        List<Future<Boolean>> results = ex.invokeAll(calls);
+        for (int i = 0; i < results.size(); i++) {
+            if (!(results.get(i).get())) {
+                sol = false;
+            }
+        }
+        ex.shutdown();
+        return sol;
     }
 
     @Override
@@ -372,31 +445,4 @@ public class SudokuSolver implements ISodukoSolver {
         return (after - before) / 10;
     }
 
-    private boolean existenz(int[] block, int option) {
-        for (int i = 0; i < block.length; i++) {
-            if (block[i] == option) {
-                return true;
-            }
-
-        }
-        return false;
-    }
-
-    private int only1Option(int[][][] options, int stellei, int stellej) {
-        int count = 0; //zählt die Anzahl der Zahlen über 0
-        int stelle = 0;
-        for (int k = 0; k < options.length; k++) {
-
-            if (options[stellei][stellej][k] != 0) {
-                count++;
-                stelle = k;
-            }
-
-        }
-        if (count == 1) {
-            solution[stellei][stellej] = options[stellei][stellej][stelle];
-        }
-        return count;
-
-    }
 }
