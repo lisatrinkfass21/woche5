@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 public class SudokuSolver implements ISodukoSolver {
 
     int[][] solution = new int[9][9];
+    private static boolean changed = false;
 
     public SudokuSolver() {
 
@@ -127,14 +129,14 @@ public class SudokuSolver implements ISodukoSolver {
             }*/
         while (row != 9) { // check 9erBlock mit streams
             int counter = 0;
-            int[] arr = new int[9];
+            reihe = new int[9];
             for (int i = row; i < row + 3; i++) {
                 for (int j = spalte; j < spalte + 3; j++) {
-                    arr[counter] = rawSudoku[i][j];
+                    reihe[counter] = rawSudoku[i][j];
                     counter++;
                 }
             }
-            if (Arrays.stream(arr).distinct().toArray().length != 9) {
+            if (Arrays.stream(reihe).distinct().toArray().length != 9) {
                 return false;
             }
             spalte += 3;
@@ -185,19 +187,18 @@ public class SudokuSolver implements ISodukoSolver {
             return true;
         };
         Callable<Boolean> calBloc = () -> {
-            int[] reihe = new int[9];
             int row = 0;
             int spalte = 0;
             while (row != 9) {
                 int counter = 0;
-                int[] arr = new int[9];
+                int[] reihe = new int[9];
                 for (int i = row; i < row + 3; i++) {
                     for (int j = spalte; j < spalte + 3; j++) {
-                        arr[counter] = rawSudoku[i][j];
+                        reihe[counter] = rawSudoku[i][j];
                         counter++;
                     }
                 }
-                if (Arrays.stream(arr).distinct().toArray().length != 9) {
+                if (Arrays.stream(reihe).distinct().toArray().length != 9) {
                     return false;
                 }
                 spalte += 3;
@@ -404,7 +405,7 @@ public class SudokuSolver implements ISodukoSolver {
                 }
             }
             change = true;
-            for (int i = 0; i < options.length; i++) {//Überprüfung ob sudoku schon fertig ist
+            for (int i = 0; i < options.length; i++) {//Überprüfung ob options schon fertig ist
                 for (int j = 0; j < options[i].length; j++) {
                     if (options[i][j].length == 9) {//schaut ob noch irgendwo mehr als eine Option ist
                         change = false;
@@ -423,8 +424,230 @@ public class SudokuSolver implements ISodukoSolver {
 
     @Override
     public int[][] solveSudokuParallel(int[][] rawSudoku) {
+        int[][][] options = new int[9][9][9];
+        ExecutorService executor;
 
-        return new int[0][0];
+        for (int i = 0; i < rawSudoku.length; i++) { //wie oben options wird mit allen möglichen zahlen befüllt
+            for (int j = 0; j < rawSudoku[i].length; j++) {
+                if (rawSudoku[i][j] == 0) {
+                    options[i][j] = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9};
+                } else {
+                    options[i][j] = new int[]{rawSudoku[i][j]};
+                }
+            }
+        }
+
+        Runnable deleteRows = () -> {//Funtion wie oben
+            for (int i = 0; i < options.length; i++) {
+                int[][] numbers = Arrays.stream(options[i]).filter(arr -> arr.length == 1).toArray(int[][]::new);
+                for (int j = 0; j < numbers.length; j++) {
+                    int index = numbers[j][0] - 1;
+                    Arrays.stream(options[i]).forEach(arr -> {
+                        if (arr.length == 9) {
+                            arr[index] = 0;
+                        }
+                    });
+                }
+            }
+        };
+
+        Runnable deleteColumn = () -> {//Funktion wie oben
+            for (int i = 0; i < options.length; i++) {
+                int[][] columnArr = new int[9][];
+                for (int j = 0; j < options.length; j++) {
+                    columnArr[j] = options[j][i];
+                }
+                int[][] numbers = Arrays.stream(columnArr).filter(arr -> arr.length == 1).toArray(int[][]::new);
+                for (int j = 0; j < numbers.length; j++) {
+                    int index = numbers[j][0] - 1;
+                    Arrays.stream(columnArr).forEach(arr -> {
+                        if (arr.length == 9) {
+                            arr[index] = 0;
+                        }
+                    });
+                }
+                for (int j = 0; j < columnArr.length; j++) {
+                    options[j][i] = columnArr[j];
+                }
+            }
+        };
+
+        Runnable deleteBoxes = () -> {//Funktion wie oben
+            int indexRaw = 0;
+            int indexColumn = 0;
+            while (indexRaw != 9) {
+                for (int i = indexRaw; i < indexRaw + 3; i++) {
+                    for (int j = indexColumn; j < indexColumn + 3; j++) {
+                        if (options[i][j].length == 1) {
+                            for (int k = indexRaw; k < indexRaw + 3; k++) {
+                                for (int l = indexColumn; l < indexColumn + 3; l++) {
+                                    if (options[k][l].length != 1) {
+                                        options[k][l][options[i][j][0] - 1] = 0;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                indexColumn += 3;
+                if (indexColumn == 9) {
+                    indexColumn = 0;
+                    indexRaw += 3;
+                }
+            }
+        };
+
+        Runnable checkRows = () -> {//Funktion wie oben
+            for (int i = 0; i < options.length; i++) {
+                int[][] currentArr = options[i];
+                for (int j = 0; j < currentArr.length; j++) {
+                    if (currentArr[j].length == 9) {
+                        List<Integer> numbers = new ArrayList<>();
+                        for (int k = 0; k < currentArr[j].length; k++) {
+                            if (currentArr[j][k] != 0) {
+                                numbers.add(currentArr[j][k]);
+                            }
+                        }
+                        for (int a = 0; a < numbers.size(); a++) {
+                            int counter = 0;
+                            for (int k = 0; k < currentArr.length; k++) {
+                                List<Integer> temp = Arrays.stream(currentArr[k]).boxed().collect(Collectors.toList());
+                                if (temp.contains(numbers.get(a))) {
+                                    counter++;
+                                }
+                            }
+                            if (counter == 1) {
+                                options[i][j] = new int[]{numbers.get(a)};
+                                this.changed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        Runnable checkColumns = () -> {//Funktion wie oben
+            for (int i = 0; i < options.length; i++) {
+                int[][] currentArr = new int[options[i].length][];
+                for (int x = 0; x < options[i].length; x++) {
+                    currentArr[x] = options[x][i];
+                }
+                for (int j = 0; j < currentArr.length; j++) {
+                    if (currentArr[j].length == 9) {
+                        List<Integer> numbers = new ArrayList<>();
+                        for (int k = 0; k < currentArr[j].length; k++) {
+                            if (currentArr[j][k] != 0) {
+                                numbers.add(currentArr[j][k]);
+                            }
+                        }
+                        for (int a = 0; a < numbers.size(); a++) {
+                            int counter = 0;
+                            for (int k = 0; k < currentArr.length; k++) {
+                                List<Integer> temp = Arrays.stream(currentArr[k]).boxed().collect(Collectors.toList());
+                                if (temp.contains(numbers.get(a))) {
+                                    counter++;
+                                }
+                            }
+                            if (counter == 1) {
+                                options[j][i] = new int[]{numbers.get(a)};
+                                this.changed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        Runnable checkBoxes = () -> {//Funktion wie oben
+            int indexRaw = 0;
+            int indexColumn = 0;
+            while (indexRaw != 9) {
+                int tempCounter = 0;
+                int[][] currentArr = new int[options.length][];
+                for (int i = indexRaw; i < indexRaw + 3; i++) {
+                    for (int j = indexColumn; j < indexColumn + 3; j++) {
+                        currentArr[tempCounter] = options[i][j];
+                        tempCounter++;
+                    }
+                }
+                for (int j = 0; j < currentArr.length; j++) {
+                    if (currentArr[j].length == 9) {
+                        List<Integer> numbers = new ArrayList<>();
+                        for (int k = 0; k < currentArr[j].length; k++) {
+                            if (currentArr[j][k] != 0) {
+                                numbers.add(currentArr[j][k]);
+                            }
+                        }
+                        for (int a = 0; a < numbers.size(); a++) {
+                            int counter = 0;
+                            for (int k = 0; k < currentArr.length; k++) {
+                                List<Integer> temp = Arrays.stream(currentArr[k]).boxed().collect(Collectors.toList());
+                                if (temp.contains(numbers.get(a))) {
+                                    counter++;
+                                }
+                            }
+                            if (counter == 1) {
+                                int rawIndex = (j / 3) + indexRaw;
+                                int columnIndex = (j % 3) + indexColumn;
+                                options[rawIndex][columnIndex] = new int[]{numbers.get(a)};
+                                this.changed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                indexColumn += 3;
+                if (indexColumn == 9) {
+                    indexColumn = 0;
+                    indexRaw += 3;
+                }
+            }
+        };
+
+        while (!(this.changed)) {
+            executor = Executors.newCachedThreadPool();
+            executor.execute(deleteRows);
+            executor.execute(deleteColumn);
+            executor.execute(deleteBoxes);
+            executor.shutdown();
+            try {
+                executor.awaitTermination(1, TimeUnit.HOURS);//wartet bis alle fertig sind
+            } catch (InterruptedException ex) {
+                Logger.getLogger(SudokuSolver.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            executor = Executors.newCachedThreadPool();
+            this.changed = true;
+            while (this.changed) {
+                executor = Executors.newCachedThreadPool();
+                this.changed = false;
+                executor.execute(checkRows);
+                executor.execute(checkColumns);
+                executor.execute(checkBoxes);
+                executor.shutdown();
+                try {
+                    executor.awaitTermination(1, TimeUnit.HOURS);//wartet bis alle fertig sind
+                } catch (InterruptedException ex) {
+                    Logger.getLogger(SudokuSolver.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+            this.changed = true;//wie oben -> überprüft ob sudoku schon fertig ist
+            for (int i = 0; i < options.length; i++) {
+                for (int j = 0; j < options[i].length; j++) {
+                    if (options[i][j].length == 9) {
+                        this.changed = false;
+                        break;
+                    }
+                }
+                if (!(this.changed)) {
+                    break;
+                }
+            }
+        }
+
+        int[][] sol = Arrays.stream(options).map(arr -> Arrays.stream(arr).mapToInt(i -> i[0]).toArray()).toArray(int[][]::new);
+        return sol;
     }
 
     public long benchmark(int[][] rawSudoku) { //keine Ahnung wofür der Parameter notwendig war,wenn wir auch readSudoku messen müssen müssen?

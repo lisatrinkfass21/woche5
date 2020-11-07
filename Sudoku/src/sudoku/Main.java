@@ -20,7 +20,7 @@ public class Main {
         System.out.println(">--- ORIGINAL ---");
         //print the sudoku if you want
         ausgabe(input);
-        int[][] output = ss.solveSudoku(input);
+        int[][] output = ss.solveSudokuParallel(input);
         System.out.println(">--- SOLUTION ---");
         // print the sudoku if you want
         ausgabe(output);
@@ -28,7 +28,7 @@ public class Main {
         System.out.println("SOLVED    = " + ss.checkSudokuParallel(output));
         System.out.println(">----------------");
 
-        System.out.println("Benchmark (Laufzeit): " + ss.benchmark(new int[9][9]) + " msec.");
+        System.out.println("Benchmark (Laufzeit) nicht parallel: " + ss.benchmark(new int[9][9]) + " msec.");
     }
 
     private static void ausgabe(int[][] arr) {
