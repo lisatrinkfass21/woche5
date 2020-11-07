@@ -16,7 +16,7 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException, ExecutionException {
         SudokuSolver ss = new SudokuSolver();
-        int[][] input = ss.readSudoku(new File("3_sudoku_level2.csv"));
+        int[][] input = ss.readSudoku(new File("1_sudoku_level1.csv"));
         System.out.println(">--- ORIGINAL ---");
         //print the sudoku if you want
         ausgabe(input);
@@ -29,6 +29,8 @@ public class Main {
         System.out.println(">----------------");
 
         System.out.println("Benchmark (Laufzeit) nicht parallel: " + ss.benchmark(new int[9][9]) + " msec.");
+        System.out.println("Benchmark (Laufzeit) parallel: " + ss.benchmarkParallel(new int[9][9]) + " msec.");
+
     }
 
     private static void ausgabe(int[][] arr) {

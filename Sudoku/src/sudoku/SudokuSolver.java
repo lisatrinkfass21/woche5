@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
  */
 public class SudokuSolver implements ISodukoSolver {
 
-    int[][] solution = new int[9][9];
     private static boolean changed = false;
 
     public SudokuSolver() {
@@ -656,7 +655,6 @@ public class SudokuSolver implements ISodukoSolver {
         int[][] unsolved = new int[9][9];
         int[][] solved = new int[9][9];
         for (int i = 0; i < 10; i++) {
-            solution = new int[9][9];
             unsolved = readSudoku(file);
             solved = solveSudoku(unsolved);
             checkSudoku(solved);
@@ -668,4 +666,23 @@ public class SudokuSolver implements ISodukoSolver {
         return (after - before) / 10;
     }
 
+    public long benchmarkParallel(int[][] rawSudoku) throws InterruptedException, ExecutionException {
+        File file = new File("3_sudoku_level2.csv");
+        long before = System.currentTimeMillis();
+        int[][] unsolved = new int[9][9];
+        int[][] solved = new int[9][9];
+        for (int i = 0; i < 10; i++) {
+            unsolved = readSudoku(file);
+            solved = solveSudokuParallel(unsolved);
+            checkSudokuParallel(solved);
+            unsolved = new int[9][9];
+            solved = new int[9][9];
+
+        }
+        long after = System.currentTimeMillis();
+        return (after - before) / 10;
+    }
+
+    //Antwort: Ja, es läuft um einiges schneller wie vorher da die checks von reihen / spalten und blöcken gleichzeiteig verlaufen
+    //Genauso auch verläuft die Löschung von den optionen in der selben Reihe / Spalte und Blöcken gleichzeitig
 }
